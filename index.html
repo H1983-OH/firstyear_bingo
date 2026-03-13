@@ -1,0 +1,512 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Nunito:wght@400;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: transparent; color: var(--color-text-primary); }
+
+  .wrap { padding: 1rem 0.5rem 2rem; max-width: 700px; margin: 0 auto; }
+
+  .header { text-align: center; margin-bottom: 1rem; }
+  .title { font-size: 30px; font-weight: 900; letter-spacing: -1.5px; color: var(--color-text-primary); line-height: 1; }
+  .title span { color: #639922; }
+  .title-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--color-text-tertiary); letter-spacing: 2px; margin-top: 5px; }
+
+  .domain-tags { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
+  .tag { font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 4px 11px; border-radius: 20px; }
+  .tag-java { background: #FAECE7; color: #993C1D; }
+  .tag-py   { background: #E6F1FB; color: #0C447C; }
+  .tag-ds   { background: #E1F5EE; color: #085041; }
+  .tag-algo { background: #EEEDFE; color: #3C3489; }
+
+  /* difficulty badge */
+  .diff-badge { display: inline-block; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-left: 4px; vertical-align: middle; }
+  .diff-1 { background: #EAF3DE; color: #3B6D11; }
+  .diff-2 { background: #FAEEDA; color: #854F0B; }
+  .diff-3 { background: #FCEBEB; color: #A32D2D; }
+
+  /* timer */
+  .timer-panel { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 11px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .timer-display { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: var(--color-text-primary); letter-spacing: 2px; flex: 1; transition: color 0.3s; }
+  .timer-display.running { color: #1D9E75; }
+  .timer-display.stopped { color: #E24B4A; }
+  .timer-display.finished { color: #7F77DD; }
+  .timer-btns { display: flex; gap: 6px; }
+  .tbtn { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 7px 13px; cursor: pointer; background: transparent; color: var(--color-text-secondary); transition: background 0.12s, color 0.12s; white-space: nowrap; }
+  .tbtn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+  .tbtn.green { background: #1D9E75; color: white; border-color: #0F6E56; }
+  .tbtn.green:hover { background: #0F6E56; }
+  .tbtn.red { background: #E24B4A; color: white; border-color: #A32D2D; }
+  .tbtn.red:hover { background: #A32D2D; }
+
+  /* records */
+  .records-panel { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); margin-bottom: 10px; overflow: hidden; }
+  .rec-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; border-bottom: 0.5px solid var(--color-border-tertiary); cursor: pointer; user-select: none; }
+  .rec-header-left { display: flex; align-items: center; gap: 8px; }
+  .rec-title { font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--color-text-primary); letter-spacing: 0.5px; text-transform: uppercase; }
+  .rec-count { font-size: 11px; font-family: 'JetBrains Mono', monospace; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 10px; padding: 2px 8px; color: var(--color-text-secondary); }
+  .rec-toggle { font-size: 11px; color: var(--color-text-tertiary); font-family: 'JetBrains Mono', monospace; }
+  .rec-body { display: none; padding: 8px 14px 12px; }
+  .rec-body.open { display: block; }
+  .rec-empty { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--color-text-tertiary); text-align: center; padding: 12px 0; }
+  .rec-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+  .rec-table th { color: var(--color-text-tertiary); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; text-align: left; padding: 4px 6px; border-bottom: 0.5px solid var(--color-border-tertiary); font-weight: 400; }
+  .rec-table td { padding: 6px 6px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); vertical-align: middle; }
+  .rec-table tr:last-child td { border-bottom: none; }
+  .rec-table tr.best td { color: var(--color-text-primary); font-weight: 700; }
+  .time-val { color: var(--color-text-primary); font-weight: 700; }
+  .lines-badge { background: #EEEDFE; color: #3C3489; border-radius: 10px; padding: 2px 7px; font-size: 10px; }
+  .rec-clear { font-size: 11px; color: var(--color-text-tertiary); cursor: pointer; border: none; background: transparent; font-family: 'JetBrains Mono', monospace; padding: 2px 6px; border-radius: 4px; }
+  .rec-clear:hover { color: #E24B4A; background: #FCEBEB; }
+
+  /* caller */
+  .caller-box { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .caller-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .caller-info { flex: 1; min-width: 0; }
+  .caller-label { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--color-text-tertiary); letter-spacing: 1.5px; text-transform: uppercase; }
+  .caller-concept { font-size: 15px; font-weight: 800; color: var(--color-text-primary); margin: 2px 0; }
+  .caller-hint { font-size: 12px; color: var(--color-text-secondary); font-family: 'JetBrains Mono', monospace; line-height: 1.4; }
+  .caller-diff { margin-top: 3px; }
+  .draw-btn { background: var(--color-text-primary); color: var(--color-background-primary); border: none; border-radius: var(--border-radius-md); padding: 9px 18px; font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: opacity 0.15s, transform 0.1s; }
+  .draw-btn:hover { opacity: 0.8; }
+  .draw-btn:active { transform: scale(0.97); }
+  .draw-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* stats */
+  .stats-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .stat-pill { flex: 1; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 7px 8px; text-align: center; font-family: 'JetBrains Mono', monospace; }
+  .stat-num { font-size: 17px; font-weight: 700; color: var(--color-text-primary); display: block; }
+  .stat-lbl { font-size: 10px; color: var(--color-text-tertiary); }
+
+  /* legend */
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 8px; }
+  .leg { font-size: 10px; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 4px; color: var(--color-text-secondary); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* grid */
+  .col-headers { display: grid; grid-template-columns: repeat(5,1fr); gap: 5px; margin-bottom: 5px; }
+  .col-h { text-align: center; font-size: 20px; font-weight: 900; color: var(--color-text-primary); padding: 3px 0; }
+  .grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 5px; margin-bottom: 8px; }
+
+  .cell { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: 8px; padding: 7px 4px; text-align: center; cursor: pointer; min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: background 0.12s, border-color 0.12s, transform 0.1s; position: relative; user-select: none; overflow: hidden; }
+  .cell:hover:not(.marked):not(.free) { background: var(--color-background-secondary); border-color: var(--color-border-primary); }
+  .cell:active { transform: scale(0.95); }
+  .cell-stripe { position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 8px 8px 0 0; }
+  .cell-diff-dot { position: absolute; bottom: 4px; right: 5px; width: 5px; height: 5px; border-radius: 50%; }
+
+  .cell.marked { cursor: default; }
+  .cell.marked[data-domain="java"] { background: #FAECE7; border-color: #D85A30; }
+  .cell.marked[data-domain="java"] .cell-text { color: #993C1D; font-weight: 800; }
+  .cell.marked[data-domain="py"]   { background: #E6F1FB; border-color: #378ADD; }
+  .cell.marked[data-domain="py"] .cell-text   { color: #0C447C; font-weight: 800; }
+  .cell.marked[data-domain="ds"]   { background: #E1F5EE; border-color: #1D9E75; }
+  .cell.marked[data-domain="ds"] .cell-text   { color: #085041; font-weight: 800; }
+  .cell.marked[data-domain="algo"] { background: #EEEDFE; border-color: #7F77DD; }
+  .cell.marked[data-domain="algo"] .cell-text { color: #3C3489; font-weight: 800; }
+  .cell.free { background: #639922; border-color: #3B6D11; cursor: default; }
+  .cell.free .cell-text { color: white; font-size: 10px; font-weight: 800; }
+  .cell.free .cell-icon { font-size: 20px; }
+
+  .cell.winner-cell { animation: popwin 0.5s ease-in-out 3; }
+  @keyframes popwin { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+  .cell-icon { font-size: 17px; line-height: 1; }
+  .cell-text { font-size: 9px; line-height: 1.3; color: var(--color-text-primary); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .cell-check { position: absolute; top: 3px; right: 5px; font-size: 9px; }
+
+  /* bingo banner */
+  .bingo-banner { display: none; text-align: center; border-radius: var(--border-radius-lg); padding: 14px 16px; margin-bottom: 8px; animation: banIn 0.35s ease-out; background: #EAF3DE; border: 2px solid #639922; }
+  @keyframes banIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+  .bingo-banner.show { display: block; }
+  .bingo-big { font-size: 28px; font-weight: 900; color: #173404; }
+  .bingo-time { font-size: 14px; font-family: 'JetBrains Mono', monospace; color: #3B6D11; margin-top: 4px; font-weight: 700; }
+  .bingo-msg { font-size: 12px; color: #3B6D11; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+  /* called log */
+  .called-log { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 9px 12px; margin-bottom: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--color-text-secondary); line-height: 1.9; min-height: 32px; word-break: break-word; }
+  .log-label { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--color-text-tertiary); display: block; margin-bottom: 3px; }
+  .ci { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 10px; margin: 1px; }
+  .ci-java { background: #F5C4B3; color: #993C1D; }
+  .ci-py   { background: #B5D4F4; color: #0C447C; }
+  .ci-ds   { background: #9FE1CB; color: #085041; }
+  .ci-algo { background: #CECBF6; color: #3C3489; }
+  .ci.hit { opacity: 0.4; text-decoration: line-through; }
+
+  /* controls */
+  .controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .ctrl-btn { background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 8px 16px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; color: var(--color-text-secondary); transition: background 0.15s, color 0.15s; }
+  .ctrl-btn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+
+  /* diff filter */
+  .filter-row { display: flex; gap: 6px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .fbtn { font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 4px 12px; border-radius: 20px; cursor: pointer; border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); color: var(--color-text-secondary); transition: all 0.12s; }
+  .fbtn.active-all  { background: #2C2C2A; color: #F1EFE8; border-color: #2C2C2A; }
+  .fbtn.active-1 { background: #EAF3DE; color: #3B6D11; border-color: #639922; }
+  .fbtn.active-2 { background: #FAEEDA; color: #854F0B; border-color: #BA7517; }
+  .fbtn.active-3 { background: #FCEBEB; color: #A32D2D; border-color: #E24B4A; }
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <div class="title">I'm still<span>a 1st-year student!</span></div>
+    <div class="title-sub">JAVA · PYTHON · DATA STRUCTURES · ALGORITHMS</div>
+  </div>
+
+  <div class="domain-tags">
+    <span class="tag tag-java">☕ Java</span>
+    <span class="tag tag-py">🐍 Python</span>
+    <span class="tag tag-ds">🗂 Data Structures</span>
+    <span class="tag tag-algo">⚡ Algorithms</span>
+  </div>
+
+  <!-- TIMER -->
+  <div class="timer-panel">
+    <div class="timer-display" id="timerDisplay">00:00:00</div>
+    <div class="timer-btns">
+      <button class="tbtn green" id="startStopBtn" onclick="toggleTimer()">START</button>
+      <button class="tbtn" onclick="resetTimer()">RESET</button>
+    </div>
+  </div>
+
+  <!-- RECORDS -->
+  <div class="records-panel">
+    <div class="rec-header" onclick="toggleRecords()">
+      <div class="rec-header-left">
+        <span class="rec-title">Time Records</span>
+        <span class="rec-count" id="recCount">0</span>
+      </div>
+      <span class="rec-toggle" id="recToggle">▼ show</span>
+    </div>
+    <div class="rec-body" id="recBody">
+      <div class="rec-empty" id="recEmpty">No records yet — complete a BINGO to save your time!</div>
+      <table class="rec-table" id="recTable" style="display:none">
+        <thead><tr><th>#</th><th>Time</th><th>Lines</th><th>Draws</th><th>Date</th><th></th></tr></thead>
+        <tbody id="recTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BINGO BANNER -->
+  <div class="bingo-banner" id="banner">
+    <div class="bingo-big">BINGO! 🎉</div>
+    <div class="bingo-time" id="banTime"></div>
+    <div class="bingo-msg" id="banMsg"></div>
+  </div>
+
+  <!-- CALLER -->
+  <div class="caller-box">
+    <div class="caller-dot" id="callerDot" style="background:#888"></div>
+    <div class="caller-info">
+      <div class="caller-label">Current Draw</div>
+      <div class="caller-concept" id="callerConcept">Press DRAW to begin!</div>
+      <div class="caller-hint" id="callerHint">Java · Python · Data Structures · Algorithms</div>
+      <div class="caller-diff" id="callerDiff"></div>
+    </div>
+    <button class="draw-btn" id="drawBtn" onclick="draw()">DRAW</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-pill"><span class="stat-num" id="sMarked">1</span><span class="stat-lbl">Marked</span></div>
+    <div class="stat-pill"><span class="stat-num" id="sDrawn">0</span><span class="stat-lbl">Drawn</span></div>
+    <div class="stat-pill"><span class="stat-num" id="sLines">0</span><span class="stat-lbl">Lines</span></div>
+    <div class="stat-pill"><span class="stat-num" id="sLeft">64</span><span class="stat-lbl">Remaining</span></div>
+  </div>
+
+  <!-- DIFF FILTER -->
+  <div class="filter-row">
+    <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--color-text-tertiary);align-self:center;">filter drawn:</span>
+    <button class="fbtn active-all" onclick="setFilter('all',this)">All</button>
+    <button class="fbtn" onclick="setFilter(1,this)">🟢 Beginner</button>
+    <button class="fbtn" onclick="setFilter(2,this)">🟡 Intermediate</button>
+    <button class="fbtn" onclick="setFilter(3,this)">🔴 Advanced</button>
+  </div>
+
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#D85A30"></div>Java</div>
+    <div class="leg"><div class="leg-dot" style="background:#378ADD"></div>Python</div>
+    <div class="leg"><div class="leg-dot" style="background:#1D9E75"></div>Data Structures</div>
+    <div class="leg"><div class="leg-dot" style="background:#7F77DD"></div>Algorithms</div>
+    <div class="leg" style="margin-left:6px">
+      <div style="width:7px;height:7px;border-radius:50%;background:#639922;display:inline-block"></div>&nbsp;Easy
+      <div style="width:7px;height:7px;border-radius:50%;background:#BA7517;display:inline-block;margin-left:5px"></div>&nbsp;Mid
+      <div style="width:7px;height:7px;border-radius:50%;background:#E24B4A;display:inline-block;margin-left:5px"></div>&nbsp;Hard
+    </div>
+  </div>
+
+  <div class="col-headers" id="colHeaders"></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="called-log">
+    <span class="log-label">Called so far</span>
+    <span id="calledLog">—</span>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="resetGame()">↺ New Game</button>
+    <button class="ctrl-btn" onclick="autoMark()">⚡ Auto-mark called</button>
+    <button class="ctrl-btn" onclick="saveRecord()">💾 Save Record</button>
+  </div>
+</div>
+
+<script>
+const DC = { java:'#D85A30', py:'#378ADD', ds:'#1D9E75', algo:'#7F77DD' };
+const DIFF_COLOR = { 1:'#639922', 2:'#BA7517', 3:'#E24B4A' };
+const DIFF_LABEL = { 1:'Beginner', 2:'Intermediate', 3:'Advanced' };
+
+// diff: 1=beginner, 2=intermediate, 3=advanced
+const ALL = [
+  // ☕ JAVA
+  {d:'java',icon:'☕',text:'main() method',   hint:'Entry point of every Java program',             diff:1},
+  {d:'java',icon:'📦',text:'Class & Object',  hint:'Blueprint vs instance — OOP foundation',        diff:1},
+  {d:'java',icon:'🔢',text:'int / double',    hint:'Primitive data types in Java',                  diff:1},
+  {d:'java',icon:'🔁',text:'for loop',        hint:'for(int i=0; i<n; i++)',                        diff:1},
+  {d:'java',icon:'❓',text:'if / else',       hint:'Conditional branching logic',                   diff:1},
+  {d:'java',icon:'📋',text:'Array',           hint:'int[] arr = new int[5];',                       diff:1},
+  {d:'java',icon:'🧱',text:'Constructor',     hint:'Special method to initialise an object',        diff:2},
+  {d:'java',icon:'🎭',text:'Inheritance',     hint:'class Dog extends Animal { }',                  diff:2},
+  {d:'java',icon:'🔒',text:'Access Modifier', hint:'public / private / protected',                  diff:2},
+  {d:'java',icon:'⚠️',text:'Exception',       hint:'try { } catch(Exception e) { }',               diff:2},
+  {d:'java',icon:'🔄',text:'Overriding',      hint:'Redefine a parent method in child class',       diff:2},
+  {d:'java',icon:'📐',text:'Interface',       hint:'Contract of methods a class must implement',    diff:3},
+  {d:'java',icon:'🌊',text:'ArrayList',       hint:'Dynamic-size list: ArrayList<String> list',     diff:2},
+  {d:'java',icon:'🧬',text:'Polymorphism',    hint:'One method, many behaviours',                   diff:3},
+  {d:'java',icon:'🗂',text:'HashMap',         hint:'Key-value store: map.put("a", 1)',               diff:2},
+  {d:'java',icon:'🔀',text:'static keyword',  hint:'Belongs to the class, not an instance',         diff:2},
+
+  // 🐍 PYTHON
+  {d:'py',icon:'🐍',text:'print()',           hint:'print("Hello, World!")',                        diff:1},
+  {d:'py',icon:'📝',text:'Variables',         hint:'x = 5 — no type declaration needed!',           diff:1},
+  {d:'py',icon:'📋',text:'List',              hint:'fruits = ["apple", "banana", "cherry"]',        diff:1},
+  {d:'py',icon:'🔁',text:'for in loop',       hint:'for item in list:',                             diff:1},
+  {d:'py',icon:'🧩',text:'def function',      hint:'def greet(name): return "Hi " + name',          diff:1},
+  {d:'py',icon:'🔑',text:'Dictionary',        hint:'person = {"name": "Ana", "age": 20}',           diff:1},
+  {d:'py',icon:'🎯',text:'List Comprehension',hint:'[x*2 for x in range(10)]',                      diff:2},
+  {d:'py',icon:'📦',text:'import / module',   hint:'import math — reuse code libraries',             diff:2},
+  {d:'py',icon:'❓',text:'None type',         hint:'Python\'s version of null / nothing',           diff:1},
+  {d:'py',icon:'🔢',text:'range()',           hint:'range(0, 10) — generates a sequence',           diff:1},
+  {d:'py',icon:'🎭',text:'Class in Python',   hint:'class Animal: def __init__(self, name):',       diff:2},
+  {d:'py',icon:'⚡',text:'Lambda',            hint:'double = lambda x: x * 2',                     diff:2},
+  {d:'py',icon:'🔄',text:'Recursion (Py)',    hint:'def fact(n): return 1 if n==0 else n*fact(n-1)',diff:2},
+  {d:'py',icon:'🛡',text:'try / except',      hint:'Handle errors gracefully in Python',            diff:2},
+  {d:'py',icon:'📊',text:'Tuple',             hint:'coords = (10, 20) — immutable list',            diff:1},
+  {d:'py',icon:'🔍',text:'in operator',       hint:'"apple" in fruits — check membership',          diff:1},
+
+  // 🗂 DATA STRUCTURES
+  {d:'ds',icon:'📋',text:'Stack',             hint:'LIFO — Last In, First Out (like a plate stack)',diff:1},
+  {d:'ds',icon:'📬',text:'Queue',             hint:'FIFO — First In, First Out (like a queue)',     diff:1},
+  {d:'ds',icon:'🔗',text:'Linked List',       hint:'Nodes connected by pointers/references',        diff:2},
+  {d:'ds',icon:'🌲',text:'Binary Tree',       hint:'Each node has at most 2 children',              diff:2},
+  {d:'ds',icon:'🗂',text:'Hash Table',        hint:'Key → hash → index. O(1) avg lookup',          diff:2},
+  {d:'ds',icon:'🌀',text:'Graph',             hint:'Nodes (vertices) connected by edges',           diff:2},
+  {d:'ds',icon:'📦',text:'Array vs List',     hint:'Fixed size vs dynamic — key difference',        diff:1},
+  {d:'ds',icon:'🔢',text:'2D Array',          hint:'Grid of rows and columns: arr[row][col]',       diff:2},
+  {d:'ds',icon:'🌳',text:'BST',               hint:'Binary Search Tree: left < root < right',       diff:3},
+  {d:'ds',icon:'🏔',text:'Heap',              hint:'Min-heap: parent always ≤ children',            diff:3},
+  {d:'ds',icon:'🧩',text:'Set',               hint:'Unique elements only, no duplicates',           diff:1},
+  {d:'ds',icon:'🔍',text:'Index',             hint:'arr[0] — zero-based indexing',                  diff:1},
+  {d:'ds',icon:'🔄',text:'Deque',             hint:'Double-ended queue — insert/remove both ends',  diff:2},
+  {d:'ds',icon:'🗺',text:'Adjacency List',    hint:'Efficient way to represent a graph',            diff:3},
+  {d:'ds',icon:'🌐',text:'Tree Traversal',    hint:'In-order, Pre-order, Post-order',               diff:3},
+  {d:'ds',icon:'📏',text:'Time Complexity',   hint:'How runtime grows with input size',             diff:2},
+
+  // ⚡ ALGORITHMS
+  {d:'algo',icon:'🔍',text:'Linear Search',   hint:'Check every element one by one — O(n)',         diff:1},
+  {d:'algo',icon:'🎯',text:'Binary Search',   hint:'Halve search space each step — O(log n)',       diff:2},
+  {d:'algo',icon:'🔀',text:'Bubble Sort',     hint:'Repeatedly swap adjacent elements — O(n²)',     diff:1},
+  {d:'algo',icon:'📊',text:'Selection Sort',  hint:'Find minimum, place it first — O(n²)',          diff:1},
+  {d:'algo',icon:'⚡',text:'Merge Sort',      hint:'Divide & conquer, merge — O(n log n)',          diff:2},
+  {d:'algo',icon:'🌀',text:'Recursion',       hint:'Function calls itself with smaller input',      diff:2},
+  {d:'algo',icon:'📈',text:'Big-O Notation',  hint:'O(1) < O(log n) < O(n) < O(n²)',               diff:2},
+  {d:'algo',icon:'🧱',text:'Base Case',       hint:'Stops the recursion — without it: infinite!',  diff:2},
+  {d:'algo',icon:'🎲',text:'Brute Force',     hint:'Try all possibilities — simple but slow',       diff:1},
+  {d:'algo',icon:'🗺',text:'BFS',             hint:'Breadth-First Search — level by level',         diff:3},
+  {d:'algo',icon:'🌲',text:'DFS',             hint:'Depth-First Search — go deep first',            diff:3},
+  {d:'algo',icon:'🔢',text:'Factorial',       hint:'5! = 5×4×3×2×1 = 120 — classic recursion',     diff:1},
+  {d:'algo',icon:'🔁',text:'Insertion Sort',  hint:'Insert each element into sorted position',      diff:2},
+  {d:'algo',icon:'⚠️',text:'Infinite Loop',   hint:'while True: — missing exit condition!',         diff:1},
+  {d:'algo',icon:'🏆',text:'Quick Sort',      hint:'Pick pivot, partition, recurse — O(n log n)',   diff:3},
+  {d:'algo',icon:'🧩',text:'Divide & Conquer',hint:'Split problem → solve parts → combine',         diff:2},
+];
+
+const FREE = {d:'free',icon:'💻',text:'FREE',isFree:true};
+const LINES = [
+  [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],
+  [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
+  [0,6,12,18,24],[4,8,12,16,20]
+];
+const MSGS = [
+  'Hello World achieved! 🌍','Runtime error? Nope — you compiled a WIN!','No off-by-one here — perfect score!','Your code review: LGTM! 🚀','Stack overflow of SUCCESS!'];
+
+let board, marked, drawn, called, wonLines;
+let timerInterval=null, timerStart=null, timerElapsed=0, timerRunning=false;
+let records=[], nextRecId=1, recordsOpen=false;
+let activeFilter='all';
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// TIMER
+function getElapsed(){return timerRunning?timerElapsed+(Date.now()-timerStart):timerElapsed;}
+function formatTime(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);return`${String(h).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+function formatTimeMs(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),cs=Math.floor((ms%1000)/10);return`${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;}
+function toggleTimer(){
+  const btn=document.getElementById('startStopBtn');
+  if(!timerRunning){
+    timerStart=Date.now();timerRunning=true;
+    timerInterval=setInterval(()=>{document.getElementById('timerDisplay').textContent=formatTime(getElapsed());},100);
+    btn.textContent='PAUSE';btn.className='tbtn red';
+    document.getElementById('timerDisplay').className='timer-display running';
+  } else {
+    timerElapsed=getElapsed();clearInterval(timerInterval);timerRunning=false;
+    btn.textContent='RESUME';btn.className='tbtn green';
+    document.getElementById('timerDisplay').className='timer-display stopped';
+  }
+}
+function resetTimer(){
+  clearInterval(timerInterval);timerRunning=false;timerElapsed=0;timerStart=null;
+  document.getElementById('timerDisplay').textContent='00:00:00';
+  document.getElementById('timerDisplay').className='timer-display';
+  const btn=document.getElementById('startStopBtn');btn.textContent='START';btn.className='tbtn green';
+}
+function stopTimerOnBingo(){
+  if(timerRunning){timerElapsed=getElapsed();clearInterval(timerInterval);timerRunning=false;
+    document.getElementById('startStopBtn').textContent='RESUME';
+    document.getElementById('startStopBtn').className='tbtn green';
+    document.getElementById('timerDisplay').className='timer-display finished';}
+  return timerElapsed;
+}
+
+// RECORDS
+function toggleRecords(){
+  recordsOpen=!recordsOpen;
+  document.getElementById('recBody').className='rec-body'+(recordsOpen?' open':'');
+  document.getElementById('recToggle').textContent=recordsOpen?'▲ hide':'▼ show';
+}
+function renderRecords(){
+  const sorted=[...records].sort((a,b)=>a.ms-b.ms);
+  document.getElementById('recCount').textContent=records.length;
+  if(!records.length){document.getElementById('recEmpty').style.display='block';document.getElementById('recTable').style.display='none';return;}
+  document.getElementById('recEmpty').style.display='none';document.getElementById('recTable').style.display='table';
+  document.getElementById('recTbody').innerHTML=records.map((r,i)=>{
+    const rank=sorted.findIndex(s=>s.id===r.id)+1;
+    const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+    return`<tr class="${rank===1?'best':''}"><td>${medal||'#'+(i+1)}</td><td class="time-val">${formatTimeMs(r.ms)}</td><td><span class="lines-badge">${r.lines} line${r.lines!==1?'s':''}</span></td><td>${r.draws}</td><td style="color:var(--color-text-tertiary);font-size:10px">${r.date}</td><td><button class="rec-clear" onclick="deleteRecord(${r.id})">✕</button></td></tr>`;
+  }).join('');
+}
+function saveRecord(){
+  const ms=getElapsed();if(ms<1000){return;}
+  const now=new Date();
+  const date=`${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  records.unshift({id:nextRecId++,ms,lines:wonLines.size,draws:drawn.length,date});
+  if(!recordsOpen)toggleRecords();renderRecords();
+}
+function deleteRecord(id){records=records.filter(r=>r.id!==id);renderRecords();}
+
+// FILTER
+function setFilter(val, btn){
+  activeFilter=val;
+  document.querySelectorAll('.fbtn').forEach(b=>b.className='fbtn');
+  btn.className='fbtn '+(val==='all'?'active-all':val===1?'active-1':val===2?'active-2':'active-3');
+}
+
+// GAME
+function initGame(){
+  const perDomain=ALL.filter(c=>c.d==='java').sort(()=>Math.random()-0.5).slice(0,6)
+    .concat(ALL.filter(c=>c.d==='py').sort(()=>Math.random()-0.5).slice(0,6))
+    .concat(ALL.filter(c=>c.d==='ds').sort(()=>Math.random()-0.5).slice(0,6))
+    .concat(ALL.filter(c=>c.d==='algo').sort(()=>Math.random()-0.5).slice(0,6));
+  const picks=shuffle(perDomain);
+  board=[];
+  for(let i=0;i<25;i++) board.push(i===12?{...FREE}:picks[i<12?i:i-1]);
+  marked=board.map((_,i)=>i===12);drawn=[];called=[];wonLines=new Set();
+  document.getElementById('banner').classList.remove('show');
+  document.getElementById('drawBtn').disabled=false;
+  document.getElementById('callerConcept').textContent='Press DRAW to begin!';
+  document.getElementById('callerHint').textContent='Java · Python · Data Structures · Algorithms';
+  document.getElementById('callerDiff').innerHTML='';
+  document.getElementById('callerDot').style.background='#888';
+  document.getElementById('colHeaders').innerHTML='BINGO'.split('').map(l=>`<div class="col-h">${l}</div>`).join('');
+  renderGrid();updateStats();renderLog();
+}
+
+function renderGrid(){
+  const g=document.getElementById('grid');g.innerHTML='';
+  board.forEach((cell,idx)=>{
+    const el=document.createElement('div');
+    const win=isWinnerIdx(idx);
+    el.className='cell'+(cell.isFree?' free':'')+(marked[idx]&&!cell.isFree?' marked':'')+(win?' winner-cell':'');
+    el.dataset.domain=cell.d||'free';
+    const sc=cell.isFree?'#639922':(DC[cell.d]||'#888');
+    const dc=cell.diff?DIFF_COLOR[cell.diff]:'';
+    const chk=marked[idx]&&!cell.isFree?`<div class="cell-check">✓</div>`:'';
+    const dot=cell.diff?`<div class="cell-diff-dot" style="background:${dc}"></div>`:'';
+    el.innerHTML=`<div class="cell-stripe" style="background:${sc}"></div><div class="cell-icon">${cell.icon}</div><div class="cell-text">${cell.text}</div>${chk}${dot}`;
+    if(!marked[idx]&&!cell.isFree) el.onclick=()=>markCell(idx);
+    g.appendChild(el);
+  });
+}
+
+function isWinnerIdx(idx){for(const li of wonLines){if(LINES[li].includes(idx))return true;}return false;}
+function markCell(idx){if(marked[idx])return;marked[idx]=true;renderGrid();updateStats();checkBingo();renderLog();}
+
+function draw(){
+  let pool=ALL.filter(c=>!drawn.some(d=>d.text===c.text));
+  if(activeFilter!=='all') pool=pool.filter(c=>c.diff===activeFilter);
+  if(!pool.length){
+    document.getElementById('callerConcept').textContent=activeFilter==='all'?'All concepts drawn!':'No more in this level!';
+    document.getElementById('callerHint').textContent='Try another filter or reset';
+    return;
+  }
+  if(!timerRunning&&timerElapsed===0) toggleTimer();
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  drawn.push(pick);called.push(pick);
+  document.getElementById('callerDot').style.background=DC[pick.d]||'#888';
+  document.getElementById('callerConcept').textContent=pick.icon+' '+pick.text;
+  document.getElementById('callerHint').textContent=pick.hint;
+  document.getElementById('callerDiff').innerHTML=`<span class="diff-badge diff-${pick.diff}">${DIFF_LABEL[pick.diff]}</span>`;
+  updateStats();renderLog();
+}
+
+function autoMark(){
+  let changed=false;
+  board.forEach((cell,idx)=>{if(!marked[idx]&&!cell.isFree&&called.some(c=>c.text===cell.text)){marked[idx]=true;changed=true;}});
+  if(changed){renderGrid();updateStats();checkBingo();renderLog();}
+}
+
+function updateStats(){
+  document.getElementById('sMarked').textContent=marked.filter(Boolean).length;
+  document.getElementById('sDrawn').textContent=drawn.length;
+  document.getElementById('sLines').textContent=wonLines.size;
+  document.getElementById('sLeft').textContent=ALL.length-drawn.length;
+}
+
+function renderLog(){
+  const el=document.getElementById('calledLog');
+  if(!called.length){el.innerHTML='—';return;}
+  const filtered=activeFilter==='all'?called:called.filter(c=>c.diff===activeFilter);
+  const display=called.map(c=>{
+    const hit=board.some((b,i)=>b.text===c.text&&marked[i]);
+    const faded=activeFilter!=='all'&&c.diff!==activeFilter?' hit':'';
+    return`<span class="ci ci-${c.d}${hit?' hit':faded}">${c.icon} ${c.text}</span>`;
+  }).join(' ');
+  el.innerHTML=display||'—';
+}
+
+function checkBingo(){
+  let newWin=false;
+  LINES.forEach((line,li)=>{if(!wonLines.has(li)&&line.every(i=>marked[i])){wonLines.add(li);newWin=true;}});
+  if(newWin){
+    const elapsed=stopTimerOnBingo();
+    document.getElementById('banner').classList.add('show');
+    document.getElementById('banTime').textContent='Time: '+formatTimeMs(elapsed)+' · '+drawn.length+' draws · '+wonLines.size+' line'+(wonLines.size!==1?'s':'');
+    document.getElementById('banMsg').textContent=MSGS[Math.min(wonLines.size-1,MSGS.length-1)];
+    const now=new Date();
+    const date=`${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    records.unshift({id:nextRecId++,ms:elapsed,lines:wonLines.size,draws:drawn.length,date});
+    if(!recordsOpen)toggleRecords();renderRecords();
+    renderGrid();updateStats();
+  }
+}
+
+function resetGame(){resetTimer();initGame();}
+
+initGame();
+</script>
